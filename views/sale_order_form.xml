@@ -6,10 +6,16 @@
             <field name="model">sale.order</field>
             <field name="inherit_id" ref="sale.view_order_form"/>
             <field name="arch" type="xml">
+                <field name="partner_id" position="before">
+                    <field name="tentative_quo"/>
+                </field>
 
-                   <field name="partner_id" position="replace" >
-                            <field name="tentative_quo"/>
-                            <field name="partner_id" options = "{'no_create': True}"/>
+                <field name="partner_id" position="attributes">
+                    <attribute name="options">{'no_create': True}</attribute>
+                </field>
+
+
+                   <field name="partner_id" position="after" >
                             <field name="customer_branch" attrs="{'invisible': [('tentative_quo', '=', True)]}" options = "{'no_create': True}"/>
                             <field name="site_contact_name" options = "{'no_create': True}"/>
 
