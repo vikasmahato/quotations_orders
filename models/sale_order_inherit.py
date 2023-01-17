@@ -43,7 +43,6 @@ class ResPartnerInherited(models.Model):
 """
 
 class SaleOrderInherit(models.Model):
-    _name = 'sale.order'
     _inherit = 'sale.order'
 
     @api.model
@@ -163,10 +162,11 @@ class SaleOrderInherit(models.Model):
 
     @api.onchange('tentative_quo')
     def _onchage_tentative_quotation(self):
-        self.partner_id = False
         if self.tentative_quo:
             return  {'domain': {'partner_id': ['|', '&', ('is_company', '=', True), ('is_customer_branch', '=', False), ('is_company', '=', False)]}}
         else:
+            if self.partner_id and not (self.partner_id.is_company and not self.partner_id.is_customer_branch):
+                self.partner_id = False
             return  {'domain': {'partner_id': [('is_company', '=', True),('is_customer_branch', '=', False)]}}
 
     @api.onchange('purchaser_name')
