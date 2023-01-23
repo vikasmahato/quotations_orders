@@ -277,6 +277,21 @@ class SaleOrderInherit(models.Model):
             self.delivery_zip = self.jobsite_id.zip
             self.godown = self.jobsite_id.godown_id
 
+    @api.model_create_multi
+    def create(self, vals):
+        for val in vals:
+            if not val.get('opportunity_id'):
+                raise UserError("There is no opportunity linked with this quotation")
+
+        return super(SaleOrderInherit, self).create(vals)
+
+    def write(self, vals):
+        if not self.opportunity_id or self.opportunity_id.id:
+            raise UserError("There is no opportunity linked with this quotation")
+
+        super(SaleOrderInherit, self).write(vals)
+
+
     @api.onchange('partner_id')
     def clear_customer_branch(self):
         if self.partner_id:
