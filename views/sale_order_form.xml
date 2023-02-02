@@ -97,6 +97,9 @@
                    <field name="po_number"/>
                    <field name="po_amount"/>
                    <field name="po_date"/>
+                   <field name="bank" attrs="{'invisible': [('is_security_cheque', '=', False)]}"/>
+                   <field name="cheque_number" attrs="{'invisible': [('is_security_cheque', '=', False)]}"/>
+                   <field name="cheque_amount" attrs="{'invisible': [('is_security_cheque', '=', False)]}"/>
 
                    <field name="place_of_supply" options = "{'no_create': True}"/>
                    <field name="bill_submission_process"/>
