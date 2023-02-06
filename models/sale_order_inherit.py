@@ -286,7 +286,8 @@ class SaleOrderInherit(models.Model):
         return super(SaleOrderInherit, self).create(vals)
 
     def write(self, vals):
-        if not self.opportunity_id or self.opportunity_id.id:
+        # When a mail is being sent, write method gets called with an empty object. So add a check for Id
+        if self.id and (not self.opportunity_id or not self.opportunity_id.id):
             raise UserError("There is no opportunity linked with this quotation")
 
         super(SaleOrderInherit, self).write(vals)
