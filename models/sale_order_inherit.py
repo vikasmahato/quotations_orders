@@ -228,11 +228,12 @@ class SaleOrderInherit(models.Model):
 
             amount_untaxed = order.amount_untaxed
             amount_tax = 0
-
+            if self.price_type == 'daily':
+                days_due = (self.pickup_date-self.delivery_date).days
             order.update({
                 'amount_untaxed': amount_untaxed,
                 'amount_tax': amount_tax,
-                'amount_total': amount_untaxed + amount_tax + order.freight_amount,
+                'amount_total': ((amount_untaxed * days_due) if self.price_type == 'daily' else amount_untaxed) + amount_tax + order.freight_amount ,
             })
 
     @api.depends('order_line.tax_id', 'order_line.price_unit', 'amount_total', 'amount_untaxed', 'freight_amount')
