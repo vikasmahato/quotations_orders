@@ -131,6 +131,7 @@ class SaleOrderInherit(models.Model):
     po_date = fields.Date(string='PO Date')
     bank = fields.Char(string='Bank')
     cheque_number = fields.Char(string='Cheque Number', default=None)
+    cheque_date = fields.Date(string='Cheque Date', default=None)
     cheque_amount = fields.Monetary(string='Cheque Amount')
 
     beta_quot_id = fields.Integer()
