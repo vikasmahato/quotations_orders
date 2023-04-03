@@ -44,7 +44,6 @@ class ResPartnerInherited(models.Model):
 
 class SaleOrderInherit(models.Model):
     _inherit = 'sale.order'
-
     @api.model
     def _get_default_country(self):
         country = self.env['res.country'].search([('code', '=', 'IN')], limit=1)
@@ -52,6 +51,12 @@ class SaleOrderInherit(models.Model):
 
     jobsite_id = fields.Many2one('jobsite', string='Site Name')
     tentative_quo = fields.Boolean('Tentative Quotation', default=False)
+    order_type = fields.Selection([
+        ('RENTAL', 'RENTAL'),
+        ('SALE', 'SALE')],
+        string="Order Type",
+        default='RENTAL')
+
     partner_id = fields.Many2one(
         'res.partner', string='Customer', readonly=True,
         states={'draft': [('readonly', False)], 'sent': [('readonly', False)]},
@@ -223,6 +228,7 @@ class SaleOrderInherit(models.Model):
     rental_advance = fields.Binary(string="Rental Advance")
     rental_order = fields.Binary(string="Rental Order")
     security_cheque = fields.Binary(string="Security Cheque")
+    payment_reciept = fields.Binary(string="Payment Reciept")
 
     @api.model
     def _amount_all(self):
@@ -391,6 +397,7 @@ class SaleOrderInherit(models.Model):
             traceback.format_exc()
 
 
+
 class ProductTemplateInherit(models.Model):
     _name = 'product.template'
     _inherit = 'product.template'
@@ -449,5 +456,6 @@ class SaleOrderLineInherit(models.Model):
                 'warning': {'title': 'Warning',
                             'message': 'Current Price < Unit Price', },
             }
+
 
 
