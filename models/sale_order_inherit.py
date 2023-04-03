@@ -232,7 +232,7 @@ class SaleOrderInherit(models.Model):
             amount_untaxed = order.amount_untaxed
             amount_tax = 0
             if self.price_type == 'daily':
-                days_due = (self.pickup_date-self.delivery_date).days
+                days_due = (self.pickup_date-self.delivery_date).days + 1
             order.update({
                 'amount_untaxed': amount_untaxed,
                 'amount_tax': amount_tax,
