@@ -53,7 +53,7 @@ class SaleOrderInherit(models.Model):
     tentative_quo = fields.Boolean('Tentative Quotation', default=False)
     order_type = fields.Selection([
         ('RENTAL', 'RENTAL'),
-        ('SALE', 'SALE')],
+        ('Sale', 'Sale')],
         string="Order Type",
         default='RENTAL')
 

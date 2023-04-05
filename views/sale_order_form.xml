@@ -136,8 +136,8 @@
                         <label for="security_cheque" string="Security Cheque" attrs="{'invisible': [('is_security_cheque', '=', False)]}"/>
                         <field name="security_cheque" attrs="{'invisible': [('is_security_cheque', '=', False)]}"/>
 
-                       <label for="payment_reciept" string="Payment Reciept" attrs="{'invisible': [('order_type', '!=', 'SALE')]}"/>
-                        <field name="payment_reciept" attrs="{'invisible': [('order_type', '!=', 'SALE')]}"/>
+                       <label for="payment_reciept" string="Payment Reciept" attrs="{'invisible': [('order_type', '!=', 'Sale')]}"/>
+                        <field name="payment_reciept" attrs="{'invisible': [('order_type', '!=', 'Sale')]}"/>
 
 
                    </div>
