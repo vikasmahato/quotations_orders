@@ -52,10 +52,10 @@ class SaleOrderInherit(models.Model):
     jobsite_id = fields.Many2one('jobsite', string='Site Name')
     tentative_quo = fields.Boolean('Tentative Quotation', default=False)
     order_type = fields.Selection([
-        ('RENTAL', 'RENTAL'),
+        ('Rental', 'Rental'),
         ('Sale', 'Sale')],
         string="Order Type",
-        default='RENTAL')
+        default='Rental')
 
     partner_id = fields.Many2one(
         'res.partner', string='Customer', readonly=True,
