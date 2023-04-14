@@ -211,9 +211,9 @@ class SaleOrderInherit(models.Model):
     otp = fields.Integer(string='OTP', store=False)
     otp_verified = fields.Boolean(string='OTP', store=False, default=False)  # TODO compute field should be equal to
 
-    is_rental_advance = fields.Boolean(related='customer_branch.rental_advance', store=False)
-    is_rental_order = fields.Boolean(related='customer_branch.rental_order', store=False)
-    is_security_cheque = fields.Boolean(related='customer_branch.security_cheque', store=False)
+    is_rental_advance = fields.Boolean(related='partner_id.rental_advance', store=False)
+    is_rental_order = fields.Boolean(related='partner_id.rental_order', store=False)
+    is_security_cheque = fields.Boolean(related='partner_id.security_cheque', store=False)
     bill_submission_process = fields.Char(related='partner_id.bill_submission_process.name', store=False)
     bill_submission_process_code = fields.Char(related='partner_id.bill_submission_process.code', store=False)
 
