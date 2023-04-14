@@ -44,7 +44,6 @@ class ResPartnerInherited(models.Model):
 
 class SaleOrderInherit(models.Model):
     _inherit = 'sale.order'
-
     @api.model
     def _get_default_country(self):
         country = self.env['res.country'].search([('code', '=', 'IN')], limit=1)
@@ -52,6 +51,13 @@ class SaleOrderInherit(models.Model):
 
     jobsite_id = fields.Many2one('jobsite', string='Site Name')
     tentative_quo = fields.Boolean('Tentative Quotation', default=False)
+
+    order_type = fields.Selection([
+        ('Rental', 'Rental'),
+        ('Sale', 'Sale')],
+        string="Order Type",
+        default='Rental')
+
     partner_id = fields.Many2one(
         'res.partner', string='Customer', readonly=True,
         states={'draft': [('readonly', False)], 'sent': [('readonly', False)]},
@@ -129,7 +135,10 @@ class SaleOrderInherit(models.Model):
     po_number = fields.Char(string="PO Number")
     po_amount = fields.Char(string="PO Amount")
     po_date = fields.Date(string='PO Date')
-
+    bank = fields.Char(string='Bank')
+    cheque_number = fields.Char(string='Cheque Number', default=None)
+    cheque_date = fields.Date(string='Cheque Date', default=None)
+    cheque_amount = fields.Monetary(string='Cheque Amount')
 
     beta_quot_id = fields.Integer()
 
@@ -220,6 +229,7 @@ class SaleOrderInherit(models.Model):
     rental_advance = fields.Binary(string="Rental Advance")
     rental_order = fields.Binary(string="Rental Order")
     security_cheque = fields.Binary(string="Security Cheque")
+    payment_reciept = fields.Binary(string="Payment Reciept")
 
     @api.model
     def _amount_all(self):
@@ -228,11 +238,12 @@ class SaleOrderInherit(models.Model):
 
             amount_untaxed = order.amount_untaxed
             amount_tax = 0
-
+            if self.price_type == 'daily':
+                days_due = (self.pickup_date-self.delivery_date).days + 1
             order.update({
                 'amount_untaxed': amount_untaxed,
                 'amount_tax': amount_tax,
-                'amount_total': amount_untaxed + amount_tax + order.freight_amount,
+                'amount_total': ((amount_untaxed * days_due) if self.price_type == 'daily' else amount_untaxed) + amount_tax + order.freight_amount ,
             })
 
     @api.depends('order_line.tax_id', 'order_line.price_unit', 'amount_total', 'amount_untaxed', 'freight_amount')
@@ -276,6 +287,22 @@ class SaleOrderInherit(models.Model):
             self.delivery_country_id = self.jobsite_id.country_id
             self.delivery_zip = self.jobsite_id.zip
             self.godown = self.jobsite_id.godown_id
+
+    @api.model_create_multi
+    def create(self, vals):
+        for val in vals:
+            if not val.get('opportunity_id'):
+                raise UserError("There is no opportunity linked with this quotation")
+
+        return super(SaleOrderInherit, self).create(vals)
+
+    def write(self, vals):
+        # When a mail is being sent, write method gets called with an empty object. So add a check for Id
+        if self.id and (not self.opportunity_id or not self.opportunity_id.id):
+            raise UserError("There is no opportunity linked with this quotation")
+
+        super(SaleOrderInherit, self).write(vals)
+
 
     @api.onchange('partner_id')
     def clear_customer_branch(self):
@@ -371,6 +398,7 @@ class SaleOrderInherit(models.Model):
             traceback.format_exc()
 
 
+
 class ProductTemplateInherit(models.Model):
     _name = 'product.template'
     _inherit = 'product.template'
@@ -429,5 +457,6 @@ class SaleOrderLineInherit(models.Model):
                 'warning': {'title': 'Warning',
                             'message': 'Current Price < Unit Price', },
             }
+
 
 

@@ -86,8 +86,7 @@
                    <field name="email_to" force_save="1"  readonly="True"/>
 
                    <field name="price_type" attrs="{'required': [('tentative_quo', '=', False)]}"/>
-
-
+                  <field name="order_type" attrs="{'required': [('tentative_quo', '=', False)]}"/>
 
 
 
@@ -97,6 +96,10 @@
                    <field name="po_number"/>
                    <field name="po_amount"/>
                    <field name="po_date"/>
+                   <field name="bank" attrs="{'invisible': [('is_security_cheque', '=', False)]}"/>
+                   <field name="cheque_number" attrs="{'invisible': [('is_security_cheque', '=', False)]}"/>
+                   <field name="cheque_amount" attrs="{'invisible': [('is_security_cheque', '=', False)]}"/>
+                   <field name="cheque_date" attrs="{'invisible': [('is_security_cheque', '=', False)]}"/>
 
                    <field name="place_of_supply" options = "{'no_create': True}"/>
                    <field name="bill_submission_process"/>
@@ -132,6 +135,11 @@
 
                         <label for="security_cheque" string="Security Cheque" attrs="{'invisible': [('is_security_cheque', '=', False)]}"/>
                         <field name="security_cheque" attrs="{'invisible': [('is_security_cheque', '=', False)]}"/>
+
+                       <label for="payment_reciept" string="Payment Reciept" attrs="{'invisible': [('order_type', '!=', 'Sale')]}"/>
+                        <field name="payment_reciept" attrs="{'invisible': [('order_type', '!=', 'Sale')]}"/>
+
+
                    </div>
                 </xpath>
 
