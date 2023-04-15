@@ -222,6 +222,9 @@ class SaleOrderInherit(models.Model):
     is_rental_advance = fields.Boolean(related='customer_branch.rental_advance', store=False)
     is_rental_order = fields.Boolean(related='customer_branch.rental_order', store=False)
     is_security_cheque = fields.Boolean(related='customer_branch.security_cheque', store=False)
+    is_rental_advance = fields.Boolean(related='partner_id.rental_advance', store=False)
+    is_rental_order = fields.Boolean(related='partner_id.rental_order', store=False)
+    is_security_cheque = fields.Boolean(related='partner_id.security_cheque', store=False)
     bill_submission_process = fields.Char(related='partner_id.bill_submission_process.name', store=False)
     bill_submission_process_code = fields.Char(related='partner_id.bill_submission_process.code', store=False)
 
@@ -294,12 +297,19 @@ class SaleOrderInherit(models.Model):
                 raise UserError("There is no opportunity linked with this quotation")
 
         return super(SaleOrderInherit, self).create(vals)
+    def _get_allowed_fields(self):
+        return ['order_line', 'pickup_date']
 
     def write(self, vals):
         # When a mail is being sent, write method gets called with an empty object. So add a check for Id
         if self.id and (not self.opportunity_id or not self.opportunity_id.id):
             raise UserError("There is no opportunity linked with this quotation")
-
+        if self.job_order != False and ('job_order' not in vals) and ('pickup_date' in vals) and self.pickup_date != vals['pickup_date']:
+            allowed_fields = self._get_allowed_fields()
+            for field in vals:
+                if field not in allowed_fields:
+                    raise UserError(
+                        "You can change only two things Pickup date and Orderlines After Job_order Confirmed")
         super(SaleOrderInherit, self).write(vals)
 
 
