@@ -2,7 +2,6 @@
 import json
 
 from odoo import models, fields, api, _
-
 import logging
 import requests
 from odoo import api, models
@@ -44,6 +43,7 @@ class ResPartnerInherited(models.Model):
 
 class SaleOrderInherit(models.Model):
     _inherit = 'sale.order'
+
     @api.model
     def _get_default_country(self):
         country = self.env['res.country'].search([('code', '=', 'IN')], limit=1)
@@ -354,34 +354,10 @@ class SaleOrderInherit(models.Model):
             }
 
     def request_otp(self):
-        api_key = self.env['ir.config_parameter'].sudo().get_param('ym_sms.api_key')
-        endpoint = self.env['ir.config_parameter'].sudo().get_param('ym_sms.url')
-        sender = self.env['ir.config_parameter'].sudo().get_param('ym_sms.sender')
         number = self.env['ir.config_parameter'].sudo().get_param('ym_sms.sales_head_contact')
+        message="OTP:- {} Youngman India Pvt. Ltd.".format(self._generate_otp())
+        self.env['ym.sms'].send_sms_to_number(number, message)
 
-        if not (api_key or endpoint or sender or number):
-            raise UserError("Rapid SMS details not configured. Please reach out to system admins")
-
-        otp = self._generate_otp()
-
-        url = "%s?apikey=%s&text=OTP:- %s Youngman India Pvt. Ltd.&mobileno=%s&sender=%s" % (
-            endpoint, api_key, str(otp), number, sender)
-
-        try:
-            response = requests.request("POST", url, headers={}, data={})
-            response.raise_for_status()
-        except requests.exceptions.HTTPError as err:
-            tb = traceback.format_exc()
-            _logger.error(tb.print_exc())
-            return {
-                'warning': {'title': 'Warning',
-                            'message': 'Could not send OTP', },
-            }
-
-        return {
-            'info': {'title': 'Warning',
-                     'message': 'Could not send OTP', },
-        }
 
     def _generate_otp(self):
         now = datetime.now()
