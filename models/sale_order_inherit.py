@@ -134,6 +134,8 @@ class SaleOrderInherit(models.Model):
     po_number = fields.Char(string="PO Number")
     po_amount = fields.Char(string="PO Amount")
     po_date = fields.Date(string='PO Date')
+
+    po_details = fields.One2many('sale.order.po.details', 'sale_order_id', string='Child Companies')
     bank = fields.Char(string='Bank')
     cheque_number = fields.Char(string='Cheque Number', default=None)
     cheque_date = fields.Date(string='Cheque Date', default=None)
@@ -233,6 +235,19 @@ class SaleOrderInherit(models.Model):
     security_cheque = fields.Binary(string="Security Cheque")
     payment_reciept = fields.Binary(string="Payment Reciept")
 
+    def open_sale_order_po_details(self):
+        if not self.id:
+            raise UserError(_('You must save the Sale Order before adding a PO Detail.'))
+        return {
+            'name': _('Sale Order PO Details'),
+            'type': 'ir.actions.act_window',
+            'res_model': 'sale.order.po.details',
+            'view_mode': 'form',
+            'view_type': 'form',
+            'target': 'new',
+            'context': {'default_sale_order_id': self.id},
+        }
+
     @api.model
     def _amount_all(self):
         super(SaleOrderInherit, self)._amount_all()
@@ -290,11 +305,28 @@ class SaleOrderInherit(models.Model):
             self.delivery_zip = self.jobsite_id.zip
             self.godown = self.jobsite_id.godown_id
 
+    def action_confirm(self):
+        # https://www.odoo.com/forum/help-1/how-to-insert-value-to-a-one2many-field-in-table-with-create-method-28714
+        if self.po_amount and self.po_number and self.po_date:
+            self.po_details = [
+                [0, 0, {
+                    'po_amount': self.po_amount,
+                    'po_number': self.po_number,
+                    'po_date': self.po_date,
+                    'pickup_date': self.pickup_date
+                }]
+            ]
+
+        super(SaleOrderInherit, self).action_confirm()
+
     @api.model_create_multi
     def create(self, vals):
         for val in vals:
-            if not val.get('opportunity_id'):
-                raise UserError("There is no opportunity linked with this quotation")
+           if not val.get('opportunity_id'):
+               raise UserError("There is no opportunity linked with this quotation")
+
+
+
 
         return super(SaleOrderInherit, self).create(vals)
     def _get_allowed_fields(self):

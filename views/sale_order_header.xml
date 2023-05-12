@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<odoo>
+  <data>
+    <record id="view_sale_order_header" model="ir.ui.view">
+      <field name="name">sale.order.header</field>
+      <field name="model">sale.order</field>
+      <field name="type">form</field>
+      <field name="inherit_id" ref="sale.view_order_form" />
+      <field name="arch" type="xml">
+        <header>
+           <button name="open_sale_order_po_details" string="Extend Order"
+                  type="object" class="oe_highlight" />
+
+
+
+                            <!-- <button name="open_custom_view" string="Cre Invoice"
+                        type="action" class="btn-primary" 
+                        attrs="{'invisible': [('invoice_status', '!=', 'to invoice')]}"/>-->
+        </header>
+      </field>
+    </record>
+  </data>
+</odoo>

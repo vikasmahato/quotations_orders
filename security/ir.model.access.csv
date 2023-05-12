@@ -1,3 +1,5 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_bill_submission_group_user,bill_submission group_user,quotations_orders.model_bill_submission,base.group_user,1,1,1,1
 access_bill_submission_group_partner_manager,bill_submission group_partner_manager,quotations_orders.model_bill_submission,base.group_partner_manager,1,1,1,1
+access_sale_order_po_details_group_user,sale_order_po_details group_user,quotations_orders.model_sale_order_po_details,base.group_user,1,1,1,1
+access_sale_order_po_details_group_partner_manager,sale_order_po_details group_partner_manager,quotations_orders.model_sale_order_po_details,base.group_partner_manager,1,1,1,1

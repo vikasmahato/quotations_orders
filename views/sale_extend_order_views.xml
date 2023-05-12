@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <data>
+    <record model="ir.ui.view" id="view_sale_order_po_details_form">
+      <field name="name">sale.order.po.details.form</field>
+      <field name="model">sale.order.po.details</field>
+      <field name="arch" type="xml">
+        <form string="Extend Order">
+          <group>
+            <group>
+            <field name="po_number"/>
+            <field name="po_date"/>
+            <field name="rental_order"/>
+            </group>
+            <group>
+            <field name="po_amount"/>
+             <field name="pickup_date"/>
+            </group>
+          </group>
+        </form>
+      </field>
+    </record>
+
+    <record model="ir.actions.act_window" id="action_sale_order_po_details">
+      <field name="name">Sale Order PO Details</field>
+      <field name="type">ir.actions.act_window</field>
+      <field name="res_model">sale.order.po.details</field>
+      <field name="view_mode">tree,form</field>
+      <field name="view_id" ref="view_sale_order_po_details_form"/>
+    </record>
+  </data>
+</odoo>
