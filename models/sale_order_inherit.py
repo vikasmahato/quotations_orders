@@ -330,7 +330,7 @@ class SaleOrderInherit(models.Model):
 
         return super(SaleOrderInherit, self).create(vals)
     def _get_allowed_fields(self):
-        return ['order_line', 'pickup_date','po_number','po_amount','rental_order']
+        return ['order_line', 'pickup_date','po_number','po_amount','rental_order','freight_amount', 'show_update_pricelist', 'name', 'po_date']
 
     def write(self, vals):
         # When a mail is being sent, write method gets called with an empty object. So add a check for Id
