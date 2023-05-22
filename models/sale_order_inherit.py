@@ -10,6 +10,7 @@ from datetime import datetime, timedelta
 from odoo.modules import get_module_resource
 from odoo.exceptions import ValidationError, UserError
 from dateutil import relativedelta
+from odoo.tools import config
 _logger = logging.getLogger(__name__)
 
 
@@ -30,16 +31,6 @@ class ResPartnerInherited(models.Model):
         country_id = self.env['res.country'].search([('code', '=', 'IN')], limit=1).id
         state = self.env['res.country.state'].search([('code', '=', state_code), ('country_id', '=', country_id)])
         return state.name if state else ""
-"""
-    def name_get(self):
-        result = []
-        for rec in self:
-            if rec.is_customer_branch:
-                result.append((rec.id, '%s - %s' % (rec.gstn, rec.state_id.name if rec.state_id else self._get_state_from_gst(self.gstn))))
-            else:
-                result.append((rec.id, rec.name))
-        return result
-"""
 
 class SaleOrderInherit(models.Model):
     _inherit = 'sale.order'
@@ -82,16 +73,6 @@ class SaleOrderInherit(models.Model):
             self.order_duration = False
 
     place_of_supply = fields.Many2one("res.country.state", string='Place of Supply', ondelete='restrict')
-
-    # amendment_doc = fields.Char(string="Amendment Doc")
-    # released_at = fields.Datetime(string="Released At")
-    # reason_of_release = fields.Selection([
-    #     ('customer_request', 'Customer Request'),
-    #     ('order_fullfilled', 'Order Fulfilled'),
-    #     ('reason_of_release', 'Reason of Release')],
-    #     string="Reason of Release")
-    # is_authorized = fields.Boolean(string="Is Authorized", default=False)
-    # part_pickup = fields.Boolean(string="Part Pickup", default=False)
     remark = fields.Char(string="Remark")
 
     customer_branch = fields.Many2one(comodel_name='res.partner', string='Branch Name', domain="[('is_company', "
@@ -100,36 +81,6 @@ class SaleOrderInherit(models.Model):
 
     billing_addresses = fields.Many2one(comodel_name='res.partner', string='Billing Addresses',
                                         domain="[('is_company','=', False),('is_customer_branch', '=', False), ('parent_id', '=', customer_branch), ('type', '=', 'invoice')]")
-    # @api.model
-    # def _amount_all(self):
-    #     super(SaleOrderInherit, self)._amount_all()
-    #     for order in self:
-    #         account_move = self.env['account.move']
-    #
-    #         tax_lines_data = [{
-    #             'line_key': 'base_line_0',
-    #             'base_amount': tax_results['total_excluded'],
-    #             'tax': current_tax,
-    #         }]
-    #
-    #         amount_untaxed = order.amount_untaxed + order.freight_amount
-    #         amount_tax = order.amount_tax + 5
-    #
-    #         order.update({
-    #             'amount_untaxed': amount_untaxed,
-    #             'amount_tax': amount_tax,
-    #             'amount_total': amount_untaxed + amount_tax,
-    #         })
-
-    # @api.model
-    # def _compute_tax_totals_json(self):
-
-    #     account_move = self.env['account.move']
-    #     for order in self:
-    #         order.amount_untaxed = order.freight_amount
-    #         tax_lines_data = account_move._prepare_tax_lines_data_for_totals_from_object(order.order_line, compute_taxes)
-    #         tax_totals = account_move._get_tax_totals(order.partner_id, tax_lines_data, order.amount_total, order.amount_untaxed, order.currency_id)
-    #         order.tax_totals_json = json.dumps(tax_totals)
 
     po_number = fields.Char(string="PO Number")
     po_amount = fields.Char(string="PO Amount")
@@ -235,35 +186,9 @@ class SaleOrderInherit(models.Model):
     security_cheque = fields.Binary(string="Security Cheque")
     payment_reciept = fields.Binary(string="Payment Reciept")
 
-    def open_sale_order_po_details(self):
-        if not self.id:
-            raise UserError(_('You must save the Sale Order before adding a PO Detail.'))
-        return {
-            'name': _('Sale Order PO Details'),
-            'type': 'ir.actions.act_window',
-            'res_model': 'sale.order.po.details',
-            'view_mode': 'form',
-            'view_type': 'form',
-            'target': 'new',
-            'context': {'default_sale_order_id': self.id},
-        }
 
-    @api.model
-    def _amount_all(self):
-        super(SaleOrderInherit, self)._amount_all()
-        for order in self:
+    @api.depends('order_line.tax_id', 'order_line.price_unit', 'amount_total', 'freight_amount')
 
-            amount_untaxed = order.amount_untaxed
-            amount_tax = 0
-            if self.price_type == 'daily':
-                days_due = (self.pickup_date-self.delivery_date).days + 1
-            order.update({
-                'amount_untaxed': amount_untaxed,
-                'amount_tax': amount_tax,
-                'amount_total': ((amount_untaxed * days_due) if self.price_type == 'daily' else amount_untaxed) + amount_tax + order.freight_amount ,
-            })
-
-    @api.depends('order_line.tax_id', 'order_line.price_unit', 'amount_total', 'amount_untaxed', 'freight_amount')
     def _compute_tax_totals_json(self):
         def compute_taxes(order_line):
             price = order_line.price_unit * (1 - (order_line.discount or 0.0) / 100.0)
@@ -276,15 +201,29 @@ class SaleOrderInherit(models.Model):
         for order in self:
             tax_lines_data = account_move._prepare_tax_lines_data_for_totals_from_object(order.order_line,
                                                                                          compute_taxes)
+            tax_id = self.env['account.tax'].sudo().search([('type_tax_use', '=', 'sale'), ('amount','=',18)])
 
-            tax_lines_data.append(
-                {'line_key': "tax_line_NewId_'virtual_0'_24", "tax_amount": order.freight_amount * 0.28,
-                 "tax": self.env['account.tax'].sudo().search([('id', '=', '24')])})
-            tax_lines_data.append({'line_key': "base_line_NewId_'virtual_0'", "base_amount": order.freight_amount,
-                                   "tax": self.env['account.tax'].sudo().search([('id', '=', '24')])})
+            if order.freight_amount:
+                tax_lines_data.append({'line_key': "tax_line_freight_1", "tax_amount": order.freight_amount * tax_id.amount/100,"tax": tax_id})
+                tax_lines_data.append({'line_key': "base_line_freight", "base_amount": order.freight_amount, "tax": tax_id})
 
-            tax_totals = account_move._get_tax_totals(order.partner_id, tax_lines_data, order.amount_total,
-                                                      order.amount_untaxed, order.currency_id)
+            amount_untaxed = sum(item.get('base_amount', 0) for item in tax_lines_data)
+            tax_amount = sum(item.get('tax_amount', 0) for item in tax_lines_data)
+
+            days_due = 1  # Default value for monthly price type
+            if order.price_type == 'daily':
+                days_due = (order.pickup_date - order.delivery_date).days + 1
+                amount_untaxed = (amount_untaxed - order.freight_amount) * days_due
+                amount_total = tax_amount + amount_untaxed + order.freight_amount
+            else:
+                amount_total = tax_amount + amount_untaxed
+
+            tax_totals = account_move._get_tax_totals(order.partner_id, tax_lines_data, amount_total,
+                                                      amount_untaxed, order.currency_id)
+            tax_totals['freight'] = order.freight_amount
+            tax_totals['formatted_freight'] = "Rs. " + str(order.freight_amount)
+            tax_totals['freight_tax'] = order.freight_amount * tax_id.amount/100
+            tax_totals['formatted_freight_tax'] = "Rs. " + str(order.freight_amount * tax_id.amount/100)
             order.tax_totals_json = json.dumps(tax_totals)
 
 
