@@ -191,14 +191,19 @@ class SaleOrderInherit(models.Model):
         super(SaleOrderInherit, self)._amount_all()
         for order in self:
 
-            amount_untaxed = order.amount_untaxed
-            amount_tax = order.amount_tax + (order.freight_amount * 18)/100
+
+            amount_untaxed = order.amount_untaxed * ((self.pickup_date - self.delivery_date).days + 1) if self.price_type == 'daily' else order.amount_untaxed
+
+            amount_tax = ((amount_untaxed * 18) / 100) + ((order.freight_amount * 18) / 100)
+
             if self.price_type == 'daily':
                 days_due = (self.pickup_date - self.delivery_date).days + 1
             order.update({
                 'amount_untaxed': amount_untaxed,
                 'amount_tax': amount_tax,
-                'amount_total': ((amount_untaxed * days_due) if self.price_type == 'daily' else amount_untaxed) + amount_tax + order.freight_amount,
+
+                'amount_total': amount_untaxed + amount_tax + order.freight_amount,
+
             })
     @api.depends('order_line.tax_id', 'order_line.price_unit', 'amount_total', 'freight_amount')
     def _compute_tax_totals_json(self):
@@ -226,7 +231,7 @@ class SaleOrderInherit(models.Model):
             if order.price_type == 'daily':
                 days_due = (order.pickup_date - order.delivery_date).days + 1
                 amount_untaxed = (amount_untaxed - order.freight_amount) * days_due
-                amount_total = tax_amount + amount_untaxed + order.freight_amount
+                amount_total = amount_untaxed + order.freight_amount + (amount_untaxed * 18)/100 + (order.freight_amount * 18)/100
             else:
                 amount_total = tax_amount + amount_untaxed
 
