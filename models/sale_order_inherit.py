@@ -186,9 +186,21 @@ class SaleOrderInherit(models.Model):
     security_cheque = fields.Binary(string="Security Cheque")
     payment_reciept = fields.Binary(string="Payment Reciept")
 
+    @api.model
+    def _amount_all(self):
+        super(SaleOrderInherit, self)._amount_all()
+        for order in self:
 
+            amount_untaxed = order.amount_untaxed
+            amount_tax = order.amount_tax + (order.freight_amount * 18)/100
+            if self.price_type == 'daily':
+                days_due = (self.pickup_date - self.delivery_date).days + 1
+            order.update({
+                'amount_untaxed': amount_untaxed,
+                'amount_tax': amount_tax,
+                'amount_total': ((amount_untaxed * days_due) if self.price_type == 'daily' else amount_untaxed) + amount_tax + order.freight_amount,
+            })
     @api.depends('order_line.tax_id', 'order_line.price_unit', 'amount_total', 'freight_amount')
-
     def _compute_tax_totals_json(self):
         def compute_taxes(order_line):
             price = order_line.price_unit * (1 - (order_line.discount or 0.0) / 100.0)
