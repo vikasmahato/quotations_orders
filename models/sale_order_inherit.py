@@ -185,6 +185,19 @@ class SaleOrderInherit(models.Model):
     rental_order = fields.Binary(string="Rental Order")
     security_cheque = fields.Binary(string="Security Cheque")
     payment_reciept = fields.Binary(string="Payment Reciept")
+    
+    def open_sale_order_po_details(self):
+        if not self.id:
+            raise UserError(_('You must save the Sale Order before adding a PO Detail.'))
+        return {
+            'name': _('Sale Order PO Details'),
+            'type': 'ir.actions.act_window',
+            'res_model': 'sale.order.po.details',
+            'view_mode': 'form',
+            'view_type': 'form',
+            'target': 'new',
+            'context': {'default_sale_order_id': self.id},
+        }
 
     @api.model
     def _amount_all(self):

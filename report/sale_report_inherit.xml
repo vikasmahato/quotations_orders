@@ -146,7 +146,7 @@
                                 <td><span t-field="doc.amount_total" t-options='{"widget": "monetary", "display_currency": doc.pricelist_id.currency_id}'/></td>
                             </tr>
                             <tr>
-                                <td colspan="2">Taxes Extra @ 18% GST</td>
+                                <td colspan="2">Taxes Includes @ 18% GST</td>
                             </tr>
                         </table>
                     </div>
