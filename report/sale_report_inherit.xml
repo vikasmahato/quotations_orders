@@ -131,7 +131,7 @@
                         <table class="table table-sm">
                             <tr>
                                 <td>Amount</td>
-                                <td><span t-field="doc.amount_untaxed" t-options='{"widget": "monetary", "display_currency": doc.pricelist_id.currency_id}'/><span t-if="doc.price_type == 'daily'">/Day</span><span t-else="">/Month</span></td>
+				<td><span t-field="doc.amount_untaxed" t-options='{"widget": "monetary", "display_currency": doc.pricelist_id.currency_id}'/></td>
                             </tr>
                             <tr>
                                 <td>Freight as per Inco Terms</td>
