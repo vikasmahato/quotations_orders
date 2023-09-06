@@ -333,8 +333,8 @@ class SaleOrderInherit(models.Model):
 
         return super(SaleOrderInherit, self).create(vals)
     def _get_allowed_fields(self):
-        return ['order_line', 'pickup_date','po_number','po_amount','rental_order','freight_amount', 'show_update_pricelist', 'name', 'po_date']
-
+        return ['order_line', 'pickup_date', 'po_number', 'po_amount', 'rental_order', 'freight_amount',
+         'show_update_pricelist', 'po_date', 'state']
     def write(self, vals):
         # When a mail is being sent, write method gets called with an empty object. So add a check for Id
         if self.id and (not self.opportunity_id or not self.opportunity_id.id):
@@ -345,6 +345,11 @@ class SaleOrderInherit(models.Model):
                 if field not in allowed_fields:
                     raise UserError(
                         "You can change only two things Pickup date and Orderlines After Job_order Confirmed")
+
+            # make a call to ym_beta_updates.amend_order
+        if ('rental_order' in vals) and ('pickup_date' not in vals):
+            if(vals.get('state') is not 'sale'):
+                self.action_amend(vals)
         super(SaleOrderInherit, self).write(vals)
 
 
