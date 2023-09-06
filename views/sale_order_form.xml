@@ -55,10 +55,11 @@
                             <field name="freight_amount" attrs="{'required': [('tentative_quo', '=', False)]}"/>
                             <field name="security_amount" attrs="{'required': [('tentative_quo', '=', False)], 'invisible': [('is_security_cheque', '=', False)]}"/>
                             <field name="freight_paid_by" attrs="{'required': [('tentative_quo', '=', False)]}"/>
-                            <field name="below_min_price"/>
+                            <field name="below_min_price" invisible="1"/>
 
                         <div>
                             <field name="otp" attrs="{'invisible': [('below_min_price', '=', False)]}"/>
+                            <field name="otp_verified" invisible="1"/>
                             <button name="request_otp" type="object" string="Request OTP" attrs="{'invisible': [('below_min_price', '=', False)]}"/>
                             <button name="verify_otp" type="object" string="Verify OTP" attrs="{'invisible': [('below_min_price', '=', False)]}"/>
                         </div>

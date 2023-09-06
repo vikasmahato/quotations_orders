@@ -121,6 +121,9 @@ class SaleOrderInherit(models.Model):
 
     pickup_date = fields.Date('Pickup Date')
 
+
+
+
     @api.onchange('tentative_quo')
     def _onchage_tentative_quotation(self):
         if self.tentative_quo:
@@ -169,8 +172,8 @@ class SaleOrderInherit(models.Model):
 
     below_min_price = fields.Boolean('Below Min Price', default=False)
 
-    otp = fields.Integer(string='OTP', store=False)
-    otp_verified = fields.Boolean(string='OTP', store=False, default=False)  # TODO compute field should be equal to
+    otp = fields.Integer(string='OTP')
+    otp_verified = fields.Boolean(string='OTP', default=False)  # TODO compute field should be equal to
 
     is_rental_advance = fields.Boolean(related='customer_branch.rental_advance', store=False)
     is_rental_order = fields.Boolean(related='customer_branch.rental_order', store=False)
@@ -185,7 +188,7 @@ class SaleOrderInherit(models.Model):
     rental_order = fields.Binary(string="Rental Order")
     security_cheque = fields.Binary(string="Security Cheque")
     payment_reciept = fields.Binary(string="Payment Reciept")
-    
+
     def open_sale_order_po_details(self):
         if not self.id:
             raise UserError(_('You must save the Sale Order before adding a PO Detail.'))
@@ -274,6 +277,37 @@ class SaleOrderInherit(models.Model):
             self.delivery_zip = self.jobsite_id.zip
             self.godown = self.jobsite_id.godown_id
 
+    @api.onchange('order_line')
+    def price_change(self):
+        # if self.below_min_price == True and self.otp_verified==True:
+        #     return
+
+        pricelist_id = self.pricelist_id.id
+        for order_line in self.order_line:
+            product_id =order_line.product_id.id
+            product_data = self.env['product.pricelist.item'].sudo().search(
+                    [('pricelist_id', '=', pricelist_id), ('product_id', '=', product_id)], limit=1)
+
+            unit_price = product_data.fixed_price if product_data else self.env['product.product'].search(
+                    [('id', '=', product_id)], limit=1).list_price
+
+            current_price = order_line.price_unit
+            if current_price< unit_price:
+                if order_line.is_item_verified==True:
+                    pass
+                else:
+                    self.below_min_price = True
+                    order_line.price_unit = unit_price
+                    # return self.get_notifcation_message("Wrong", "Wrong OTP", "danger")
+                    return {
+                        'warning': {
+                            'title': 'Warning',
+                            'message': 'You are attempting to enter a price for the product that is less than its unit price.Please Verifiy using otp.',
+                        },
+                    }
+
+
+
     def action_confirm(self):
         # https://www.odoo.com/forum/help-1/how-to-insert-value-to-a-one2many-field-in-table-with-create-method-28714
         if self.po_amount and self.po_number and self.po_date:
@@ -341,21 +375,36 @@ class SaleOrderInherit(models.Model):
 
     def verify_otp(self):
         otp = self._generate_otp()
-        if self.otp == otp:
-            self.below_min_price = True
-            # self.otp_verified = True
-            return {
-                'warning': {'title': 'OTP Verified',
-                            'message': 'OTP has been verified.', },
-            }
+        if self.otp == int(otp):
+            for order_line in self.order_line:
+                if order_line.is_item_verified==True:
+                    pass
+                else:
+                    order_line.is_item_verified=True
+            self.otp_verified = True
+
+            return self.get_notifcation_message("Success", "OTP Verified", "success")
         else:
-            return {
-                'warning': {'title': 'Warning',
-                            'message': 'OTP did not match. Please try again.', },
-            }
+            return self.get_notifcation_message("Wrong", "Wrong OTP", "danger")
+
+    def get_notifcation_message(self, name, msg, type):
+        notification = {
+            'type': 'ir.actions.client',
+            'tag': 'display_notification',
+            'params': {
+                'title': (name),
+                'message': msg,
+                'type': type,  # types: success,warning,danger,info
+                'sticky': False,  # True/False will display for few seconds if false
+            },
+        }
+        return notification
 
     def request_otp(self):
-        number = self.env['ir.config_parameter'].sudo().get_param('ym_sms.sales_head_contact')
+        if self.team_id.name=='INSIDE SALES':
+            number=self.env['ir.config_parameter'].sudo().get_param('ym_sms.sales_head_contact_inside_sales')
+        else:
+            number = self.env['ir.config_parameter'].sudo().get_param('ym_sms.sales_head_contact_pam')
         message="OTP:- {} Youngman India Pvt. Ltd.".format(self._generate_otp())
         self.env['ym.sms'].send_sms_to_number(number, message)
 
@@ -427,22 +476,6 @@ class SaleOrderLineInherit(models.Model):
 
     item_code = fields.Char(string="Item Code")
     beta_quot_item_id = fields.Integer()
-
-
-    @api.onchange('price_unit')
-    def min_price(self):
-        if self.order_id.below_min_price:
-            return
-
-        product_id = self.product_id
-        unit_price = self.env['product.product'].search([('id', '=', product_id.id)], limit=1).list_price
-        current_price = unit_price
-        if current_price < unit_price:
-            self.price_unit = self._origin.price_unit
-            return {
-                'warning': {'title': 'Warning',
-                            'message': 'Current Price < Unit Price', },
-            }
-
+    is_item_verified=fields.Boolean()
 
 
