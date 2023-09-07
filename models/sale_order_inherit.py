@@ -295,7 +295,7 @@ class SaleOrderInherit(models.Model):
             if current_price< unit_price:
                 if order_line.is_item_verified==True:
                     pass
-                else:
+                elif (self.price_type == 'daily' and current_price < unit_price / 30) or (self.price_type == 'monthly'):
                     self.below_min_price = True
                     order_line.price_unit = unit_price
                     # return self.get_notifcation_message("Wrong", "Wrong OTP", "danger")
