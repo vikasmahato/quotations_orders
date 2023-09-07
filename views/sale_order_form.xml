@@ -87,6 +87,7 @@
                    <field name="email_to" force_save="1"  readonly="True"/>
 
                    <field name="price_type" attrs="{'required': [('tentative_quo', '=', False)]}"/>
+                   <field name="vehicle_type"/>
                   <field name="order_type" attrs="{'required': [('tentative_quo', '=', False)]}"/>
 
 

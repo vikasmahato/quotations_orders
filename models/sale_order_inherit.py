@@ -165,6 +165,12 @@ class SaleOrderInherit(models.Model):
         string="Price Type",
         default='monthly')
 
+    total_cft=fields.Float(string='total_cft',compute='calculate_total_cft', store=True)
+
+
+
+    vehicle_type=fields.Char(string='Vehicle Type', compute='_compute_vehicle_type', store=True)
+
     purchaser_name = fields.Many2one("res.partner", string='Purchaser Name', domain="[('parent_id', '=', partner_id),('category_id','ilike','purchaser'),('is_company', '=', False)]")
     site_contact_name = fields.Many2one("res.partner", string='Site Contact Name', domain="[('parent_id', '=', partner_id),('is_company','=', False),('category_id','ilike','site contact')]")
     bill_site_contact = fields.Many2one(comodel_name='res.partner', string='Bill Submission Site Contact', domain="[('is_company', '=', False), ('parent_id', '=', partner_id), ('category_id','ilike','site contact')]")
@@ -188,6 +194,32 @@ class SaleOrderInherit(models.Model):
     rental_order = fields.Binary(string="Rental Order")
     security_cheque = fields.Binary(string="Security Cheque")
     payment_reciept = fields.Binary(string="Payment Reciept")
+
+    @api.depends('total_cft')
+    def calculate_vehicle_type(self):
+        # Call the method to get sorted vehicle types
+        sorted_vehicle_types = elf.env['vehicle.type'].get_vehicle_types_sorted_by_cft()
+        remaining_cft = self.total_cft
+
+        vehicle_type_list = []
+
+        while sorted_vehicle_types[-1].cft < remaining_cft:
+            vehicle_type_list.add(sorted_vehicle_types[-1].vehicle_type)
+            remaining_cft = remaining_cft - sorted_vehicle_types[-1].cft
+
+        for vehicle_type in sorted_vehicle_types:
+            if vehicle_type.cft > remaining_cft:
+                vehicle_type_list.append(vehicle_type.cft)
+                break
+
+        self.vehicle_type = 'vehicle_type'.join(vehicle_type_list)
+
+    @api.depends('order_line')
+    def calculate_total_cft(self):
+        total_cft = 0.0
+        for sale_order_line in self.order_line:
+            total_cft = total_cft + (sale_order_line.product_uom_qty * sale_order_line.product_template_id.cft)
+        self.total_cft = total_cft
 
     def open_sale_order_po_details(self):
         if not self.id:
