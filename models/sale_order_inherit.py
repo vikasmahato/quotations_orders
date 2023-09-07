@@ -417,7 +417,7 @@ class SaleOrderInherit(models.Model):
     def _generate_otp(self):
         now = datetime.now()
 
-        code = now.year * now.month * now.day * now.hour * now.minute
+        code = now.year * now.month * now.day * now.hour * ((now.minute // 5)+1)
         code = str(code * 1000000)
 
         return code[:6]
