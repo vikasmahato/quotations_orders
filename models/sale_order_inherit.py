@@ -198,10 +198,10 @@ class SaleOrderInherit(models.Model):
     payment_reciept = fields.Binary(string="Payment Reciept")
     freight_distance = fields.Float(string="Freight Distance", compute='_compute_freight_distance', store=True)
 
-    @api.depends('jobsite_id.zip', 'delivery_zip')
+    @api.depends('godown.pincode', 'delivery_zip')
     def _compute_freight_distance(self):
         for record in self:
-            distance = self.env['ym.master.india'].get_distance(record.jobsite_id.zip, record.delivery_zip)
+            distance = self.env['ym.master.india'].get_distance(record.godown.pincode, record.delivery_zip)
             record.freight_distance = distance
 
     @api.depends('freight_distance')
@@ -222,8 +222,8 @@ class SaleOrderInherit(models.Model):
 
             record.computed_freight_amount = total_freight * 1.2
 
-            if not record.freight_amount:
-                record.freight_amount = total_freight * 1.2
+            #if not record.freight_amount:
+            #    record.freight_amount = total_freight * 1.2
 
     @api.onchange('freight_amount')
     def on_change_freight_amount(self):
