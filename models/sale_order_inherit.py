@@ -150,6 +150,7 @@ class SaleOrderInherit(models.Model):
     delivery_date = fields.Date('Delivery Date')
     security_amount = fields.Monetary(string="Security Amount", currency_field='currency_id')
     freight_amount = fields.Monetary(string="Freight Amount", currency_field='currency_id')
+    computed_freight_amount = fields.Monetary(string="Computed Freight Amount", currency_field='currency_id', compute='_compute_freight',store=True)
     freight_paid_by = fields.Selection([
         ('freight_type1', 'It has been agreed 1st Dispatch and final Pickup will be done by Youngman'),
         ('freight_type2', 'It has been agreed 1st Dispatch will be done by Youngman and final Pickup will be done by Customer on his cost'),
@@ -169,7 +170,7 @@ class SaleOrderInherit(models.Model):
 
 
 
-    vehicle_type=fields.Char(string='Vehicle Type', compute='_compute_vehicle_type', store=True)
+    vehicle_type=fields.Char(string='Vehicle Type', compute='_calculate_vehicle_type', store=True)
 
     purchaser_name = fields.Many2one("res.partner", string='Purchaser Name', domain="[('parent_id', '=', partner_id),('category_id','ilike','purchaser'),('is_company', '=', False)]")
     site_contact_name = fields.Many2one("res.partner", string='Site Contact Name', domain="[('parent_id', '=', partner_id),('is_company','=', False),('category_id','ilike','site contact')]")
@@ -177,6 +178,7 @@ class SaleOrderInherit(models.Model):
     bill_office_contact = fields.Many2one(comodel_name='res.partner', string='Customer Bill Submission Office Contact', domain="[('is_company', '=', False), ('parent_id', '=', partner_id),('category_id','ilike','office contact')]")
 
     below_min_price = fields.Boolean('Below Min Price', default=False)
+    below_min_freight = fields.Boolean('Below Min Freight', default=False)
 
     otp = fields.Integer(string='OTP')
     otp_verified = fields.Boolean(string='OTP', default=False)  # TODO compute field should be equal to
@@ -194,32 +196,72 @@ class SaleOrderInherit(models.Model):
     rental_order = fields.Binary(string="Rental Order")
     security_cheque = fields.Binary(string="Security Cheque")
     payment_reciept = fields.Binary(string="Payment Reciept")
+    freight_distance = fields.Float(string="Freight Distance", compute='_compute_freight_distance', store=True)
+
+    @api.depends('jobsite_id.zip', 'delivery_zip')
+    def _compute_freight_distance(self):
+        for record in self:
+            distance = self.env['ym.master.india'].get_distance(record.jobsite_id.zip, record.delivery_zip)
+            record.freight_distance = distance
+
+    @api.depends('freight_distance')
+    def _compute_freight(self):
+        for record in self:
+            vehicle_types = record.vehicle_type.split(",")
+
+            vehicle_type_records = self.env['vehicle.type'].search([('vehicle_type', 'in', vehicle_types)])
+
+            total_freight = 0.0
+            for vehicle_type in vehicle_type_records:
+                price = 0.0
+                if record.freight_distance <= vehicle_type.minimum_km_one_side:
+                    price + vehicle_type.minimum_km_one_side_prices
+                else:
+                    price = vehicle_type.minimum_km_one_side_prices + ((record.freight_distance - vehicle_type.minimum_km_one_side) * vehicle_type.rates_per_km)
+                total_freight = total_freight + price
+
+            record.computed_freight_amount = total_freight * 1.2
+
+            if not record.freight_amount:
+                record.freight_amount = total_freight * 1.2
+
+    @api.onchange('freight_amount')
+    def on_change_freight_amount(self):
+        if self.freight_amount < 0.9 * self.computed_freight_amount:
+            return {
+                'warning': {
+                    'title': 'Freight Warning',
+                    'message': 'The entered freight amount is too less',
+                }
+            }
 
     @api.depends('total_cft')
-    def calculate_vehicle_type(self):
+    def _calculate_vehicle_type(self):
+        for record in self:
         # Call the method to get sorted vehicle types
-        sorted_vehicle_types = elf.env['vehicle.type'].get_vehicle_types_sorted_by_cft()
-        remaining_cft = self.total_cft
+            sorted_vehicle_types = self.env['vehicle.type'].get_vehicle_types_sorted_by_cft()
+            remaining_cft = record.total_cft
 
-        vehicle_type_list = []
+            vehicle_type_list = []
 
-        while sorted_vehicle_types[-1].cft < remaining_cft:
-            vehicle_type_list.add(sorted_vehicle_types[-1].vehicle_type)
-            remaining_cft = remaining_cft - sorted_vehicle_types[-1].cft
+            while sorted_vehicle_types[-1].cft < remaining_cft:
+                vehicle_type_list.append(sorted_vehicle_types[-1].vehicle_type)
+                remaining_cft = remaining_cft - sorted_vehicle_types[-1].cft
 
-        for vehicle_type in sorted_vehicle_types:
-            if vehicle_type.cft > remaining_cft:
-                vehicle_type_list.append(vehicle_type.cft)
-                break
+            for vehicle_type in sorted_vehicle_types:
+                if vehicle_type.cft > remaining_cft:
+                    vehicle_type_list.append(vehicle_type.vehicle_type)
+                    break
 
-        self.vehicle_type = 'vehicle_type'.join(vehicle_type_list)
+            record.vehicle_type = ','.join(vehicle_type_list)
 
     @api.depends('order_line')
     def calculate_total_cft(self):
-        total_cft = 0.0
-        for sale_order_line in self.order_line:
-            total_cft = total_cft + (sale_order_line.product_uom_qty * sale_order_line.product_template_id.cft)
-        self.total_cft = total_cft
+        for record in self:
+            total_cft = 0.0
+            for sale_order_line in record.order_line:
+                total_cft = total_cft + (sale_order_line.product_uom_qty * sale_order_line.product_template_id.cft)
+            record.total_cft = total_cft // 0.9
 
     def open_sale_order_po_details(self):
         if not self.id:
