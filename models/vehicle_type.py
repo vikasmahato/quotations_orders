@@ -1,5 +1,5 @@
 from odoo import models, fields, api, _
-
+from odoo import tools
 
 class VehicleType(models.Model):
     _name = 'vehicle.type'
