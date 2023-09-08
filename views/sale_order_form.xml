@@ -53,6 +53,8 @@
                             <field name="delivery_date" attrs="{'required': [('tentative_quo', '=', False)]}"/>
                             <field name="pickup_date" attrs="{'required': [('tentative_quo', '=', False)]}"/>
                             <field name="freight_amount" attrs="{'required': [('tentative_quo', '=', False)]}"/>
+                            <field name="computed_freight_amount" readonly="1"/>
+
                             <field name="security_amount" attrs="{'required': [('tentative_quo', '=', False)], 'invisible': [('is_security_cheque', '=', False)]}"/>
                             <field name="freight_paid_by" attrs="{'required': [('tentative_quo', '=', False)]}"/>
                             <field name="below_min_price" invisible="1"/>
@@ -87,6 +89,8 @@
                    <field name="email_to" force_save="1"  readonly="True"/>
 
                    <field name="price_type" attrs="{'required': [('tentative_quo', '=', False)]}"/>
+                   <field name="vehicle_type"/>
+                   <field name="freight_distance" readonly="1"/>
                   <field name="order_type" attrs="{'required': [('tentative_quo', '=', False)]}"/>
 
 
