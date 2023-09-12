@@ -424,6 +424,9 @@ class SaleOrderInherit(models.Model):
         if ('rental_order' in vals) and ('pickup_date' not in vals):
             if(vals.get('state') is not 'sale'):
                 self.action_amend(vals)
+
+        if vals.get('state') == 'sale':
+            self.jobsite_id.active_orders= self.jobsite_id.active_orders+1
         super(SaleOrderInherit, self).write(vals)
 
 
