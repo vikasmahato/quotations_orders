@@ -204,7 +204,7 @@ class SaleOrderInherit(models.Model):
             distance = self.env['ym.master.india'].get_distance(record.godown.pincode, record.delivery_zip)
             record.freight_distance = distance
 
-    @api.depends('freight_distance')
+    @api.depends('freight_distance','vehicle_type')
     def _compute_freight(self):
         for record in self:
             vehicle_types = record.vehicle_type.split(",")
