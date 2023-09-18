@@ -227,7 +227,7 @@ class SaleOrderInherit(models.Model):
 
     @api.onchange('freight_amount')
     def on_change_freight_amount(self):
-        if self.freight_amount < 0.9 * self.computed_freight_amount:
+        if self.freight_amount < 0.9 * self.computed_freight_amount and self.freight_distance != 0:
             return {
                 'warning': {
                     'title': 'Freight Warning',
