@@ -215,7 +215,7 @@ class SaleOrderInherit(models.Model):
             for vehicle_type in vehicle_type_records:
                 price = 0.0
                 if record.freight_distance <= vehicle_type.minimum_km_one_side:
-                    price + vehicle_type.minimum_km_one_side_prices
+                    price = price + vehicle_type.minimum_km_one_side_prices
                 else:
                     price = vehicle_type.minimum_km_one_side_prices + ((record.freight_distance - vehicle_type.minimum_km_one_side) * vehicle_type.rates_per_km)
                 total_freight = total_freight + price
