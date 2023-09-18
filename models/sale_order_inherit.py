@@ -240,6 +240,16 @@ class SaleOrderInherit(models.Model):
         for record in self:
         # Call the method to get sorted vehicle types
             sorted_vehicle_types = self.env['vehicle.type'].get_vehicle_types_sorted_by_cft()
+            max_vehicle_type = self.order_line.product_template_id.mapped('product_vehicle_type')
+            max_vehicle_of_order_line = ''
+            cft_of_max_vehicle_of_order_line = 0
+
+            for dataset in sorted_vehicle_types:
+                if dataset.vehicle_type in max_vehicle_type:
+                    if dataset.cft > cft_of_max_vehicle_of_order_line:
+                        cft_of_max_vehicle_of_order_line = dataset.cft
+                        max_vehicle_of_order_line = dataset.vehicle_type
+
             remaining_cft = record.total_cft
 
             vehicle_type_list = []
@@ -250,7 +260,10 @@ class SaleOrderInherit(models.Model):
 
             for vehicle_type in sorted_vehicle_types:
                 if vehicle_type.cft > remaining_cft:
-                    vehicle_type_list.append(vehicle_type.vehicle_type)
+                    if cft_of_max_vehicle_of_order_line > vehicle_type.cft and len(vehicle_type_list) == 0:
+                        vehicle_type_list.append(max_vehicle_of_order_line)
+                    else:
+                        vehicle_type_list.append(vehicle_type.vehicle_type)
                     break
 
             record.vehicle_type = ','.join(vehicle_type_list)
@@ -261,7 +274,7 @@ class SaleOrderInherit(models.Model):
             total_cft = 0.0
             for sale_order_line in record.order_line:
                 total_cft = total_cft + (sale_order_line.product_uom_qty * sale_order_line.product_template_id.cft)
-            record.total_cft = total_cft // 0.9
+            record.total_cft = total_cft // 0.8
 
     def open_sale_order_po_details(self):
         if not self.id:
@@ -550,6 +563,7 @@ class ProductTemplateInherit(models.Model):
         groups="base.group_user", )
     list_price = fields.Float('Rental Price')
     default_code = fields.Char(string="Product Code")
+    product_vehicle_type=fields.Char(string="Product Vehicle Type")
 
 
 class SaleOrderLineInherit(models.Model):
